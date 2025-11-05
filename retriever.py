@@ -3,7 +3,7 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from constants import CHROMA_DIR, COLLECTION_NAME, EMBEDDING_MODEL_NAME
 
 
-class Retrival:
+class Retriever:
     def __init__(self):
         print("Initializing embedding function...")
         self.embedding_function = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)

@@ -3,7 +3,7 @@ This is an elementary Retrieval-Augmented Generation (RAG) project that allows y
 
 It's built with a modern, decoupled microservice architecture: a powerful **FastAPI** backend that handles all the NLP logic and a lightweight **Chainlit** frontend for a clean, interactive chat UI.
 
-### \#\# 🚀 Core Architecture
+### 🚀 Core Architecture
 
   * **Backend (`main.py`):** A FastAPI server that loads the models and exposes a single `/query` endpoint. It uses the `Retriever` and `Generator` classes to handle all logic.
   * **Frontend (`app.py`):** A standalone Chainlit app that provides the user interface. It makes HTTP requests to the FastAPI backend and streams the response.
@@ -13,7 +13,7 @@ It's built with a modern, decoupled microservice architecture: a powerful **Fast
 
 -----
 
-### \#\# 🏁 How to Use
+### 🏁 How to Use
 
 #### Step 1: Setup
 

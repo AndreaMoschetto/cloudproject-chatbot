@@ -5,6 +5,13 @@ from langchain_chroma import Chroma
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 from constants import DATA_DIR, CHROMA_DIR, EMBEDDING_MODEL_NAME, COLLECTION_NAME
+import argparse
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--size', type=int, default=3000, help='Size of each text chunk')
+parser.add_argument('--overlap', type=int, default=200, help='Size of each text chunk overlap')
+args = parser.parse_args()
 
 print("Initializing embedding function...")
 embedding_function = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
@@ -14,8 +21,8 @@ print(f"Loading PDF from {DATA_DIR} and converting to markdown...")
 all_chunks = []
 processed_files = 0
 splitter = RecursiveCharacterTextSplitter(
-    chunk_size=1000,
-    chunk_overlap=200,  # Overlap helps keep context between chunks
+    chunk_size=args.size,
+    chunk_overlap=args.overlap,  # Overlap helps keep context between chunks
     length_function=len
 )
 

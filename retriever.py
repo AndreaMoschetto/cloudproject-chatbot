@@ -4,7 +4,7 @@ from constants import CHROMA_DIR, COLLECTION_NAME, EMBEDDING_MODEL_NAME
 
 
 class Retriever:
-    def __init__(self):
+    def __init__(self, num_docs: int = 5):
         print("Initializing embedding function...")
         self.embedding_function = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
 
@@ -14,7 +14,7 @@ class Retriever:
             embedding_function=self.embedding_function,
             collection_name=COLLECTION_NAME
         )
-        self.retriever = self.vector_store.as_retriever(search_kwargs={"k": 3})
+        self.retriever = self.vector_store.as_retriever(search_kwargs={"k": num_docs})
         print("Retriever initialized.")
 
     def get_context(self, query: str) -> str:

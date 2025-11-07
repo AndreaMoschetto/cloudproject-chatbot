@@ -22,7 +22,7 @@ It's built with a modern, decoupled microservice architecture: a powerful **Fast
 
     ```bash
     git clone <your-repo-url>
-    cd RAG
+    cd RAGPdf
     ```
 
 2.  **Create Your Environment File:**

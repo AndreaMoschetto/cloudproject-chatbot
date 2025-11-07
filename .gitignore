@@ -50,3 +50,9 @@ data/*.pdf
 # Any log files
 *.log
 logs/
+
+# --- Chainlit Cache ---
+.chainlit/
+
+# --- Logs ---
+*.log

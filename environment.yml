@@ -1,0 +1,40 @@
+# This file defines the Conda environment for the RAG project.
+# To create this environment, run:
+# conda env create -f environment.yml
+#
+# To activate it, run:
+# conda activate rag_project
+
+name: rag_project
+channels:
+- conda-forge
+dependencies:
+# Core Python
+- python=3.11
+
+# FastAPI Backend
+- fastapi
+- uvicorn
+- python-dotenv
+
+# Chainlit Frontend
+- chainlit
+- httpx
+
+# NLP & RAG Logic
+- langchain
+- langchain-google-genai
+- langchain-huggingface
+- langchain-chroma
+
+# Vector Database
+- chromadb
+
+# PDF Parsing
+- pymupdf
+
+# Pip dependencies
+# These are installed via pip after the conda packages
+- pip
+- pip:
+  - pymupdf4llm

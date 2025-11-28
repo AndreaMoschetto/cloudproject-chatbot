@@ -3,9 +3,9 @@
 # conda env create -f environment.yml
 #
 # To activate it, run:
-# conda activate rag_project
+# conda activate cloud-nlp
 
-name: rag_project
+name: cloud-nlp
 channels:
 - conda-forge
 dependencies:
@@ -30,11 +30,9 @@ dependencies:
 # Vector Database
 - chromadb
 
-# PDF Parsing
-- pymupdf
-
 # Pip dependencies
 # These are installed via pip after the conda packages
 - pip
 - pip:
   - pymupdf4llm
+  - pymupdf

@@ -3,14 +3,15 @@ from pydantic import BaseModel
 from generator import Generator
 from retriever import Retriever
 import uvicorn
-import argparse
+from constants import NUM_DOCS
+# import argparse
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--num_docs", type=int, default=5, help="Number of documents to retrieve")
-args = parser.parse_args()
+# parser = argparse.ArgumentParser()
+# parser.add_argument("--num_docs", type=int, default=5, help="Number of documents to retrieve")
+# args = parser.parse_args()
 
 app = FastAPI()
-retriever = Retriever(num_docs=args.num_docs)
+retriever = Retriever(num_docs=NUM_DOCS)
 generator = Generator()
 
 

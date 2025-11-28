@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: nlp-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount the local chroma_db folder so data persists
+      - ./backend/chroma_db:/app/chroma_db
+    env_file:
+      - .env
+    networks:
+      - app-network
+
+  frontend:
+    build: ./frontend
+    container_name: nlp-frontend
+    ports:
+      - "8001:8000" # Map host port 8001 to container port 8000
+    environment:
+      # To talk to the backend, we use the service name "backend".
+      - BACKEND_URL=http://backend:8000
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

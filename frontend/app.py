@@ -1,7 +1,8 @@
 import chainlit as cl
 import httpx
-import uuid
-from constants import QUERY_URL
+from constants import QUERY_URL, HISTORY_URL
+
+TEST_SESSION_ID = "user_test_dynamo"  # To test history functionality
 
 
 @cl.on_chat_start
@@ -10,8 +11,33 @@ async def on_chat_start():
     client = httpx.AsyncClient(timeout=60.0)
     cl.user_session.set("http_client", client)
 
-    session_id = str(uuid.uuid4())
+    session_id = TEST_SESSION_ID
     cl.user_session.set("session_id", session_id)
+    try:
+        print(f"Fetching history for {TEST_SESSION_ID}...")
+        history_url = f"{HISTORY_URL}/{TEST_SESSION_ID}"
+
+        response = await client.get(history_url)
+        response.raise_for_status()
+        history = response.json()
+
+        if history:
+            print(f"Found {len(history)} past messages.")
+            for msg in history:
+                author = "Assistant" if msg["role"] == "assistant" else "User"
+                msg_type = 'assistant_message' if msg["role"] == "assistant" else 'user_message'
+                await cl.Message(
+                    content=msg["content"],
+                    author=author,
+                    type=msg_type
+                ).send()
+        else:
+            print("No history found.")
+
+    except Exception as e:
+        print(f"Error loading history: {e}")
+        # We don't block the app if history loading fails, the user can still chat
+        await cl.Message(content=f"⚠️ Warning: Could not load chat history. ({e})").send()
 
 
 @cl.on_message

@@ -4,6 +4,7 @@ from generator import Generator
 from retriever import Retriever
 import uvicorn
 from constants import NUM_DOCS
+from database import get_repository
 # import argparse
 
 # parser = argparse.ArgumentParser()
@@ -11,12 +12,14 @@ from constants import NUM_DOCS
 # args = parser.parse_args()
 
 app = FastAPI()
+db = get_repository()
 retriever = Retriever(num_docs=NUM_DOCS)
 generator = Generator()
 
 
 class QueryRequest(BaseModel):
     query: str
+    session_id: str = "default_session"
 
 
 class QueryResponse(BaseModel):
@@ -26,8 +29,12 @@ class QueryResponse(BaseModel):
 @app.post("/query", response_model=QueryResponse)
 def generate_answer(request: QueryRequest):
     try:
+        db.save_message(request.session_id, "user", request.query)
+
         context = retriever.get_context(request.query)
         answer = generator.generate_answer(request.query, context)
+
+        db.save_message(request.session_id, "assistant", answer)
         return QueryResponse(answer=answer)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

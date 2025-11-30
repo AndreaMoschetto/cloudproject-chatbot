@@ -1,5 +1,6 @@
 import chainlit as cl
 import httpx
+import uuid
 from constants import QUERY_URL
 
 
@@ -9,18 +10,27 @@ async def on_chat_start():
     client = httpx.AsyncClient(timeout=60.0)
     cl.user_session.set("http_client", client)
 
+    session_id = str(uuid.uuid4())
+    cl.user_session.set("session_id", session_id)
+
 
 @cl.on_message
 async def on_message(message: cl.Message):
     # Retrieve the instances from the user's session
     client = cl.user_session.get("http_client")
+    session_id = cl.user_session.get("session_id")
 
     # Create a "thinking" message to show the user
     msg = cl.Message(content="")
     await msg.send()
 
     try:
-        response = await client.post(QUERY_URL, json={"query": message.content})
+        payload = {
+            "query": message.content,
+            "session_id": session_id
+        }
+
+        response = await client.post(QUERY_URL, json=payload)
         response.raise_for_status()
 
         data = response.json()

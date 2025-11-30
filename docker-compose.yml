@@ -1,29 +1,45 @@
 version: '3.8'
 
 services:
-  backend:
-    build: ./backend
-    container_name: nlp-backend
-    ports:
-      - "8000:8000"
-    volumes:
-      # Mount the local chroma_db folder so data persists
-      - ./backend/chroma_db:/app/chroma_db
-    env_file:
-      - .env
-    networks:
-      - app-network
-
   frontend:
     build: ./frontend
     container_name: nlp-frontend
     ports:
-      - "8001:8000" # Map host port 8001 to container port 8000
+      - "8001:8000"
     environment:
-      # To talk to the backend, we use the service name "backend".
-      - BACKEND_URL=http://backend:8000
+      - BACKEND_URL=http://orchestrator:8000
     depends_on:
-      - backend
+      - orchestrator
+    networks:
+      - app-network
+
+  orchestrator:
+    build: ./orchestrator
+    container_name: nlp-orchestrator
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env  # (AWS/DB)
+    environment:
+      - RAG_SERVICE_URL=http://rag-service:8002
+    depends_on:
+      - rag-service
+    networks:
+      - app-network
+
+  rag-service:
+    build: ./rag_service
+    container_name: nlp-rag
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./rag_service/chroma_db:/app/chroma_db
+    env_file:
+      - .env  # GOOGLE_API_KEY
+    environment:
+      - CHROMA_DIR=/app/chroma_db
+      - DATA_DIR=/app/data
+      - NUM_DOCS=5
     networks:
       - app-network
 

@@ -1,7 +1,10 @@
 import json
 import os
+import boto3
+from boto3.dynamodb.conditions import Key
 from datetime import datetime
 from abc import ABC, abstractmethod
+from constants import USE_DYNAMODB
 
 
 class ChatHistoryRepository(ABC):
@@ -55,17 +58,40 @@ class LocalJsonRepository(ChatHistoryRepository):
 
 
 class DynamoDBRepository(ChatHistoryRepository):
-    def __init__(self, table_name):
-        pass
+    def __init__(self, table_name, region_name="us-east-1"):
+        self.dynamodb = boto3.resource('dynamodb', region_name=region_name)
+        self.table = self.dynamodb.Table(table_name)
 
     def save_message(self, session_id: str, role: str, content: str):
-        pass
+        timestamp = datetime.now().isoformat()
+        try:
+            self.table.put_item(
+                Item={
+                    'session_id': session_id,  # Partition Key
+                    'timestamp': timestamp,    # Sort Key
+                    'role': role,
+                    'content': content
+                }
+            )
+        except Exception as e:
+            print(f"Error saving to DynamoDB: {e}")
 
     def get_history(self, session_id: str):
-        pass
+        try:
+            response = self.table.query(
+                KeyConditionExpression=Key('session_id').eq(session_id)
+            )
+            items = response.get('Items', [])
+            items.sort(key=lambda x: x['timestamp'])
+            return items
+        except Exception as e:
+            print(f"Error reading from DynamoDB: {e}")
+            return []
 
 
 def get_repository():
-    if os.getenv("USE_DYNAMODB") == "true":
-        return DynamoDBRepository(os.getenv("DYNAMODB_TABLE", "ChatHistory"))
+    if USE_DYNAMODB.lower() == "true":
+        table_name = os.getenv("DYNAMODB_TABLE", "cloud-nlp-history")
+        return DynamoDBRepository(table_name)
+
     return LocalJsonRepository()

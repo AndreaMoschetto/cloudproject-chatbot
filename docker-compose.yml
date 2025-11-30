@@ -18,10 +18,16 @@ services:
     container_name: nlp-orchestrator
     ports:
       - "8000:8000"
-    env_file:
-      - .env  # (AWS/DB)
+    
     environment:
       - RAG_SERVICE_URL=http://rag-service:8002
+      - USE_DYNAMODB=true
+      - DYNAMODB_TABLE=cloud-nlp-history
+      
+    # only for local development
+    volumes:
+      - ~/.aws:/root/.aws:ro
+      
     depends_on:
       - rag-service
     networks:

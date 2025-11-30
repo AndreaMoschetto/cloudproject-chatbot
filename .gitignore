@@ -56,3 +56,29 @@ logs/
 
 # --- Logs ---
 *.log
+
+# --- Terraform ---
+# Local Terraform directories and state
+.terraform/
+.terraform.tfstate
+.terraform.tfstate.backup
+.terraform.tfstate.*
+.terraform.tfstate.d/
+terraform.tfstate
+terraform.tfstate.backup
+
+# Crash log and lock
+crash.log
+.terraform.lock.hcl
+
+# Override and variable files (may contain secrets)
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraform.tfvars
+*.tfvars
+*.tfvars.json
+
+# Backup and plan files
+*.tfplan

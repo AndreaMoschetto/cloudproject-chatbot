@@ -1,8 +1,6 @@
 resource "aws_cognito_user_pool" "users" {
   name = "cloud-nlp-user-pool"
 
-  # --- AGGIUNTA FONDAMENTALE 1 ---
-  # Dice a Cognito: "L'utente usa l'email come username per il login"
   username_attributes = ["email"]
   # -------------------------------
 
@@ -16,8 +14,6 @@ resource "aws_cognito_user_pool" "users" {
     require_uppercase = true
   }
 
-  # --- AGGIUNTA FONDAMENTALE 2 ---
-  # Obbliga l'utente a inserire l'email durante la registrazione
   schema {
     attribute_data_type = "String"
     name                = "email"
@@ -25,8 +21,6 @@ resource "aws_cognito_user_pool" "users" {
     mutable             = true
   }
 }
-
-# ... Il resto (client, domain) rimane uguale ...
 
 
 resource "aws_cognito_user_pool_client" "client" {
@@ -46,9 +40,8 @@ resource "aws_cognito_user_pool_client" "client" {
   callback_urls = ["http://localhost:8001/auth/oauth/aws-cognito/callback"]
 }
 
-# 3. Dominio per la pagina di login ospitata da AWS
 resource "aws_cognito_user_pool_domain" "main" {
-  domain       = "cloud-nlp-project-${random_string.suffix.result}" # Nome unico random
+  domain       = "cloud-nlp-project-${random_string.suffix.result}" 
   user_pool_id = aws_cognito_user_pool.users.id
 }
 

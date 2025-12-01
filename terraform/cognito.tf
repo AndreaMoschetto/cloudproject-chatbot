@@ -1,6 +1,12 @@
-# 1. Il contenitore degli utenti
 resource "aws_cognito_user_pool" "users" {
   name = "cloud-nlp-user-pool"
+
+  # --- AGGIUNTA FONDAMENTALE 1 ---
+  # Dice a Cognito: "L'utente usa l'email come username per il login"
+  username_attributes = ["email"]
+  # -------------------------------
+
+  auto_verified_attributes = ["email"]
 
   password_policy {
     minimum_length    = 8
@@ -10,11 +16,19 @@ resource "aws_cognito_user_pool" "users" {
     require_uppercase = true
   }
 
-  # Permette login con email
-  auto_verified_attributes = ["email"]
+  # --- AGGIUNTA FONDAMENTALE 2 ---
+  # Obbliga l'utente a inserire l'email durante la registrazione
+  schema {
+    attribute_data_type = "String"
+    name                = "email"
+    required            = true
+    mutable             = true
+  }
 }
 
-# 2. Il "Client" che userà il Frontend/Chainlit per connettersi
+# ... Il resto (client, domain) rimane uguale ...
+
+
 resource "aws_cognito_user_pool_client" "client" {
   name = "cloud-nlp-frontend-client"
   user_pool_id = aws_cognito_user_pool.users.id
@@ -27,9 +41,8 @@ resource "aws_cognito_user_pool_client" "client" {
   allowed_oauth_scopes                 = ["email", "openid", "profile"]
   supported_identity_providers         = ["COGNITO"]
   
-  # URL di callback.
-  # Nota: Quando andremo live, aggiungeremo l'URL del Load Balancer qui.
-  # Per ora mettiamo localhost per testare se volessimo.
+  read_attributes = ["email", "email_verified", "name", "preferred_username"]
+  
   callback_urls = ["http://localhost:8001/auth/oauth/aws-cognito/callback"]
 }
 

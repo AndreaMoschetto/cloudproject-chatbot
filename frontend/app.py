@@ -2,37 +2,52 @@ import chainlit as cl
 import httpx
 from constants import QUERY_URL, HISTORY_URL
 
-TEST_SESSION_ID = "user_test_dynamo"  # To test history functionality
+
+@cl.oauth_callback
+def oauth_callback(provider_id: str, token: str, raw_user_data, default_user: cl.User):
+    identifier = raw_user_data.get("email") or raw_user_data.get("username")
+    default_user.identifier = identifier
+    return default_user
 
 
 @cl.on_chat_start
 async def on_chat_start():
-    print('Connecting to backend...')
+    user = cl.user_session.get("user")
+    # If no user is found (e.g., local test without auth), fallback
+    if user:
+        session_id = user.identifier  # Es: mario.rossi@gmail.com
+    else:
+        session_id = "anonymous_user"
+
+    print(f"Starting chat for: {session_id}")
+
+    cl.user_session.set("session_id", session_id)
+
+    # Setup client HTTP
     client = httpx.AsyncClient(timeout=60.0)
     cl.user_session.set("http_client", client)
 
-    session_id = TEST_SESSION_ID
-    cl.user_session.set("session_id", session_id)
     try:
-        print(f"Fetching history for {TEST_SESSION_ID}...")
-        history_url = f"{HISTORY_URL}/{TEST_SESSION_ID}"
-
+        print(f"Fetching history for {session_id}...")
+        history_url = f"{HISTORY_URL}/{session_id}"
         response = await client.get(history_url)
-        response.raise_for_status()
-        history = response.json()
 
-        if history:
-            print(f"Found {len(history)} past messages.")
-            for msg in history:
-                author = "Assistant" if msg["role"] == "assistant" else "User"
-                msg_type = 'assistant_message' if msg["role"] == "assistant" else 'user_message'
-                await cl.Message(
-                    content=msg["content"],
-                    author=author,
-                    type=msg_type
-                ).send()
-        else:
-            print("No history found.")
+        if response.status_code == 200:
+            history = response.json()
+            if history:
+                for msg in history:
+                    msg_type = "assistant_message"
+                    author = "Assistant"
+
+                    if msg["role"] == "user":
+                        msg_type = "user_message"
+                        author = user.identifier
+
+                    await cl.Message(
+                        content=msg["content"],
+                        author=author,
+                        type=msg_type
+                    ).send()
 
     except Exception as e:
         print(f"Error loading history: {e}")
@@ -42,11 +57,9 @@ async def on_chat_start():
 
 @cl.on_message
 async def on_message(message: cl.Message):
-    # Retrieve the instances from the user's session
     client = cl.user_session.get("http_client")
-    session_id = cl.user_session.get("session_id")
+    session_id = cl.user_session.get("session_id")  # Questo ora è l'email vera!
 
-    # Create a "thinking" message to show the user
     msg = cl.Message(content="")
     await msg.send()
 
@@ -60,10 +73,11 @@ async def on_message(message: cl.Message):
         response.raise_for_status()
 
         data = response.json()
-        answer = data.get("answer", "Sorry, I couldn't find an answer.")
+        answer = data.get("answer", "Error")
 
         msg.content = answer
         await msg.update()
+
     except httpx.HTTPStatusError as e:
         # Handle backend errors (e.g., the 500 error we built)
         msg.content = f"Error from backend: {e.response.status_code}"

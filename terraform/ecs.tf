@@ -60,6 +60,7 @@ resource "aws_ecs_task_definition" "frontend" {
     environment = [
       { name = "BACKEND_URL", value = "http://${aws_lb.main.dns_name}" }, # Points to the public Load Balancer
       { name = "CHAINLIT_AUTH_SECRET", value = "SuperSegretoCloud123" },
+      { name = "CHAINLIT_URL", value = "https://am-cloudnlpchatbot.site" }, # Makes chainlit aware of the public URL, avoiding redirect issues
       # Dynamic Cognito Configuration
       { name = "OAUTH_COGNITO_CLIENT_ID", value = aws_cognito_user_pool_client.client.id },
       { name = "OAUTH_COGNITO_CLIENT_SECRET", value = aws_cognito_user_pool_client.client.client_secret },

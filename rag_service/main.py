@@ -23,6 +23,10 @@ class RAGResponse(BaseModel):
     context_used: str  # Optional: debug mode
 
 
+class IngestRequest(BaseModel):
+    file_key: str  # Il nome del file su S3 (es. "documenti/paper.pdf")
+
+
 @app.post("/generate", response_model=RAGResponse)
 def generate_response(request: RAGRequest):
     try:
@@ -36,10 +40,6 @@ def generate_response(request: RAGRequest):
     except Exception as e:
         print(f"Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
-
-class IngestRequest(BaseModel):
-    file_key: str  # Il nome del file su S3 (es. "documenti/paper.pdf")
 
 
 @app.post("/ingest-s3")

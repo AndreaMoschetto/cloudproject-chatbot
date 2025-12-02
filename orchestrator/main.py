@@ -63,7 +63,7 @@ async def trigger_ingestion(request: IngestRequest):
         async with httpx.AsyncClient(timeout=300.0) as client:  # Longer timeout for ingestion
             response = await client.post(
                 f"{RAG_SERVICE_URL}/ingest-s3",
-                json=request.dict()
+                json=request.model_dump()
             )
             response.raise_for_status()
             return response.json()

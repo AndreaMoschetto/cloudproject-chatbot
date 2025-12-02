@@ -111,6 +111,7 @@ resource "aws_ecs_task_definition" "backend" {
       image = aws_ecr_repository.rag_service.repository_url
       portMappings = [{ containerPort = 8002 }]
       environment = [
+        { name = "PYTHONUNBUFFERED", value = "1" }, # Ensures real-time logging
         { name = "S3_BUCKET_NAME", value = aws_s3_bucket.pdf_bucket.id },
         { name = "GOOGLE_API_KEY", value = var.google_api_key },
         { name = "CHROMA_DIR", value = "/app/chroma_db" },

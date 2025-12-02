@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 from retriever import Retriever
 from generator import Generator
@@ -6,6 +6,7 @@ from constants import NUM_DOCS, DATA_DIR, S3_BUCKET_NAME
 import subprocess
 import boto3
 import os
+import sys
 
 app = FastAPI()
 
@@ -43,29 +44,34 @@ def generate_response(request: RAGRequest):
 
 
 @app.post("/ingest-s3")
-def ingest_from_s3(request: IngestRequest):
-    print(f"📥 Received ingestion request for: {request.file_key}")
+def ingest_from_s3(request: IngestRequest, background_tasks: BackgroundTasks):
+    # It will be visible thanks to PYTHONUNBUFFERED
+    print(f"📥 [API] Received request for: {request.file_key}")
+    background_tasks.add_task(run_ingestion_background, request.file_key)
+    return {"status": "accepted", "message": "Ingestion started in background"}
 
+
+def run_ingestion_background(file_key: str):
+    print(f"🔄 [BACKGROUND] Starting ingestion logic for: {file_key}")
     try:
         s3 = boto3.client('s3')
-        local_path = os.path.join(DATA_DIR, os.path.basename(request.file_key))
-        print(f"Downloading from bucket {S3_BUCKET_NAME} to {local_path}...")
-        s3.download_file(S3_BUCKET_NAME, request.file_key, local_path)
+        local_path = os.path.join(DATA_DIR, os.path.basename(file_key))
 
-        # Starting the script as an imported module might cause an memory leak over time
-        print("Running ingestion script...")
-        result = subprocess.run(["python", "ingest.py"], capture_output=True, text=True)
+        print(f"⬇️ Downloading {file_key} from S3...")
+        s3.download_file(S3_BUCKET_NAME, file_key, local_path)
 
-        if result.returncode != 0:
-            print(f"❌ Ingestion failed: {result.stderr}")
-            raise Exception(result.stderr)
-
-        print(f"✅ Ingestion success: {result.stdout}")
-        return {"status": "success", "message": f"Ingested {request.file_key}"}
+        print("🚀 Launching ingest.py subprocess...")
+        process = subprocess.Popen(
+            ["python", "ingest.py"],
+            stdout=sys.stdout,  # direct logs on CloudWatch
+            stderr=sys.stderr,
+            text=True
+        )
+        process.wait()  # no problem here, it's background task
+        print(f"✅ Subprocess finished with code {process.returncode}")
 
     except Exception as e:
-        print(f"Error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"💀 Critical Background Error: {e}")
 
 
 if __name__ == "__main__":

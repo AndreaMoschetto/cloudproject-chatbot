@@ -69,7 +69,7 @@ resource "aws_lb_listener_rule" "https_backend_rule" {
 
   condition {
     path_pattern {
-      values = ["/query", "/history/*", "/docs", "/openapi.json"]
+      values = ["/query", "/history/*", "/docs", "/openapi.json", "/ingest-s3"]
     }
   }
 }

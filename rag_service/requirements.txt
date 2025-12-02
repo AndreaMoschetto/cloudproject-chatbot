@@ -11,3 +11,4 @@ chromadb
 pymupdf
 pymupdf4llm
 sentence-transformers
+boto3

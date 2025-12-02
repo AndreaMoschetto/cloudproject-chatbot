@@ -82,3 +82,7 @@ override.tf.json
 
 # Backup and plan files
 *.tfplan
+
+# Terraform artifacts
+*.zip
+terraform/*.zip

@@ -30,3 +30,13 @@ output "ecr_repos" {
     aws_ecr_repository.rag_service.repository_url
   ]
 }
+
+output "alb_dns_name" {
+  description = "Public URL of the site (before adding HTTPS and custom domain)"
+  value       = "http://${aws_lb.main.dns_name}"
+}
+
+output "website_url" {
+  description = "The FINAL public site (HTTPS)"
+  value       = "https://${data.aws_route53_zone.main.name}"
+}

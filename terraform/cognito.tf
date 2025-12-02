@@ -37,7 +37,11 @@ resource "aws_cognito_user_pool_client" "client" {
   
   read_attributes = ["email", "email_verified", "name", "preferred_username"]
   
-  callback_urls = ["http://localhost:8001/auth/oauth/aws-cognito/callback"]
+  callback_urls = [
+    "http://localhost:8001/auth/oauth/aws-cognito/callback",
+    # "http://cloud-nlp-alb-583943533.us-east-1.elb.amazonaws.com"
+    "https://am-cloudnlpchatbot.site/auth/oauth/aws-cognito/callback"
+  ]
 }
 
 resource "aws_cognito_user_pool_domain" "main" {

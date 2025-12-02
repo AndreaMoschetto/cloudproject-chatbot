@@ -19,6 +19,10 @@ class QueryResponse(BaseModel):
     answer: str
 
 
+class IngestRequest(BaseModel):
+    file_key: str
+
+
 @app.post("/query", response_model=QueryResponse)
 async def handle_query(request: QueryRequest):  # Ora è async perché usiamo httpx
     try:
@@ -49,4 +53,21 @@ def get_chat_history(session_id: str):
     try:
         return db.get_history(session_id)
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/ingest-s3")
+async def trigger_ingestion(request: IngestRequest):
+    print(f"Orchestrator received ingestion trigger for: {request.file_key}")
+    try:
+        async with httpx.AsyncClient(timeout=300.0) as client:  # Longer timeout for ingestion
+            response = await client.post(
+                f"{RAG_SERVICE_URL}/ingest-s3",
+                json=request.dict()
+            )
+            response.raise_for_status()
+            return response.json()
+
+    except Exception as e:
+        print(f"Error forwarding to RAG: {e}")
         raise HTTPException(status_code=500, detail=str(e))

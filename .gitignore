@@ -27,7 +27,7 @@ chroma_db/
 # Secret keys (like your GOOGLE_API_KEY)
 .env
 *.env
-.env.*
+.env
 
 # Temporary debug files we created
 paper.md

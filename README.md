@@ -1,97 +1,56 @@
-# 📄 RAG PDF Chatbot
+# Cloud NLP Chatbot ☁️🤖
 
-This is an elementary Retrieval-Augmented Generation (RAG) project that allows you to chat with your PDF documents.
+University project for the Cloud Systems course. A RAG (Retrieval Augmented Generation) chatbot distributed on AWS using a microservices architecture.
 
-It's built with a modern, decoupled microservice architecture: a powerful **FastAPI** backend that handles all the NLP logic and a lightweight **Chainlit** frontend for a clean, interactive chat UI.
+## 🌟 Features
 
-### 🚀 Core Architecture
+  - **Smart Chat:** Answers questions based on PDF documents.
+  - **Persistent Memory:** Saves conversation history on DynamoDB.
+  - **Authentication:** Secure login via AWS Cognito.
+  - **Automatic Ingestion:** PDF upload via S3 or Telegram Bot with automatic triggers.
+  - **Infrastructure as Code:** Fully deployed via Terraform.
 
-  * **Backend (`main.py`):** A FastAPI server that loads the models and exposes a single `/query` endpoint. It uses the `Retriever` and `Generator` classes to handle all logic.
-  * **Frontend (`app.py`):** A standalone Chainlit app that provides the user interface. It makes HTTP requests to the FastAPI backend and streams the response.
-  * **Ingestor (`ing.py`):** A script to process your local PDFs, turn them into vectors, and store them in a local `ChromaDB` database.
-  * **PDF Parsing:** Uses `pymupdf` for fast and accurate text/Markdown extraction from PDFs.
-  * **Core Logic:** `LangChain` is used for orchestration, `HuggingFace` models for embeddings, and the **Google Gemini API** for generation.
+## 🏛️ Architecture
 
------
+The system follows the Microservices pattern on AWS Fargate containers.
 
-### 🏁 How to Use
+![diagram](diagram.svg)
 
-#### Step 1: Setup
+### Main Components
 
-1.  **Clone the Repository:**
+1.  **Frontend (Chainlit):** Interactive user interface.
+2.  **Orchestrator (FastAPI):** Internal API Gateway, manages business logic and history.
+3.  **RAG Service:** The "brain". Manages embeddings (HuggingFace), the Vector Store (ChromaDB), and generation (Google Gemini).
+4.  **Ingestion Pipeline:** S3 -\> Lambda -\> RAG Service for real-time updates.
 
-    ```bash
-    git clone <your-repo-url>
-    cd RAGPdf
-    ```
+## 🛠️ Installation and Deploy
 
-2.  **Create Your Environment File:**
-    Create a file named `.env` in the root of the project. This is where you'll store your Google API key.
+### Prerequisites
 
-    ```ini
-    GOOGLE_API_KEY="your_gemini_api_key_here"
-    ```
+  - AWS CLI configured
+  - Terraform
+  - Docker
+  - GitHub Account
 
-3.  **Install Dependencies (Using `environment.yml`):**
-    This project uses `conda` and includes a complete `environment.yml` file to ensure all dependencies are correct.
-
-    ```bash
-    # 1. Create the conda environment from the file
-    conda env create -f environment.yml
-
-    # 2. Activate the new environment
-    conda activate rag_project
-    ```
-
-    This file handles all `conda` and `pip` dependencies automatically.
-
-#### Step 2: Add Your Data
-
-1.  Place any PDF files you want to chat with inside the `/data` folder.
-      * `data/paper.pdf`
-      * `data/riassunto.pdf`
-
-#### Step 3: Ingest Documents
-
-You must run the ingestion script *first* to build the vector database. Make sure your `rag_project` environment is active.
+### 1. Local Development
 
 ```bash
-python ingest.py
+# Create the .env file
+cp .env.example .env
+# Start with Docker Compose
+docker-compose up --build
 ```
 
-  * **Customize Chunking (Optional):**
-    You can control the text chunking strategy using command-line arguments:
-    ```bash
-    # Create 1000-character chunks with a 100-character overlap
-    python ingest.py --size 1000 --overlap 100
-    ```
-      * `--size`: The target size for each text chunk (default: 3000).
-      * `--overlap`: The amount of text to overlap between chunks (default: 200).
+### 2. AWS Deployment
 
-#### Step 4: Run the Application (2 Terminals)
-
-This application runs as two separate services. You'll need two terminals (both with the `rag_project` environment active).
-
-**In Terminal 1: Run the Backend (FastAPI)**
+The infrastructure is managed by Terraform.
 
 ```bash
-python main.py
+cd terraform
+# Initialize
+terraform init
+# Apply (creates ALB, ECS, Cognito, DB, S3)
+terraform apply
 ```
 
-  * **Customize Retrieval (Optional):**
-    You can control how many documents the retriever fetches:
-    ```bash
-    # Retrieve the top 3 documents for context
-    python main.py --num_docs 3
-    ```
-
-**In Terminal 2: Run the Frontend (Chainlit)**
-
-```bash
-# We must use a different port, since 8000 is taken by the backend
-chainlit run app.py -w --port 8001
-```
-
-#### Step 5: Chat\!
-
-Open your browser to **`http://localhost:8001`** to start chatting with your documents.
+The CI/CD pipeline (GitHub Actions) will automatically build and push Docker images to ECR on every push.

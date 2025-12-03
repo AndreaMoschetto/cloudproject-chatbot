@@ -3,3 +3,9 @@ variable "google_api_key" {
   type        = string
   sensitive   = true
 }
+
+variable "telegram_token" {
+  description = "Telegram Bot Token"
+  type        = string
+  sensitive   = true
+}

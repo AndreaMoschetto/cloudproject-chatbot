@@ -40,3 +40,8 @@ output "website_url" {
   description = "The FINAL public site (HTTPS)"
   value       = "https://${data.aws_route53_zone.main.name}"
 }
+
+output "telegram_webhook_url" {
+  description = "The public URL of the Lambda for Telegram"
+  value       = aws_lambda_function_url.telegram_webhook.function_url
+}

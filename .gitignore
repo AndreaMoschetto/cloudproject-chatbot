@@ -34,6 +34,7 @@ paper.md
 
 # --- Data ---
 data/*.pdf
+rag_service/data/*.pdf
 # data/*.txt
 
 # --- IDE & System ---

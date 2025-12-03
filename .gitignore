@@ -33,8 +33,10 @@ chroma_db/
 paper.md
 
 # --- Data ---
+data/
 data/*.pdf
 rag_service/data/*.pdf
+rag_service/data/
 # data/*.txt
 
 # --- IDE & System ---

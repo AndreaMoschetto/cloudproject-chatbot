@@ -1,12 +1,12 @@
 import os
+import argparse
+import chromadb
 from langchain_huggingface import HuggingFaceEmbeddings
 import pymupdf4llm as pymu
 from langchain_chroma import Chroma
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 from constants import DATA_DIR, CHROMA_DIR, EMBEDDING_MODEL_NAME, COLLECTION_NAME
-import argparse
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--size', type=int, default=3000, help='Size of each text chunk')
@@ -16,13 +16,13 @@ args = parser.parse_args()
 print("Initializing embedding function...")
 embedding_function = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
 
-print(f"Loading PDF from {DATA_DIR} and converting to markdown...")
+print(f"Loading PDF from {DATA_DIR}...")
 
 all_chunks = []
 processed_files = 0
 splitter = RecursiveCharacterTextSplitter(
     chunk_size=args.size,
-    chunk_overlap=args.overlap,  # Overlap helps keep context between chunks
+    chunk_overlap=args.overlap,
     length_function=len
 )
 
@@ -53,11 +53,21 @@ if not all_chunks:
 
 print(f"\nProcessed {processed_files} files, {len(all_chunks)} total chunks.")
 
-print("Creating and persisting vector store...")
-vector_store = Chroma.from_documents(
-    documents=all_chunks,
-    embedding=embedding_function,
-    persist_directory=CHROMA_DIR,
-    collection_name=COLLECTION_NAME
+print(f"Connecting to vector store at {CHROMA_DIR}...")
+
+# Instead of using Chroma.from_documents (which resets/creates), we use the Persistent Client.
+# This ensures we write in the same way the Retriever reads.
+client = chromadb.PersistentClient(path=CHROMA_DIR)
+
+vector_store = Chroma(
+    client=client,
+    collection_name=COLLECTION_NAME,
+    embedding_function=embedding_function,
 )
-print(f"✅ Ingestion complete! Vector store saved to {CHROMA_DIR}")
+
+print("Adding documents to vector store...")
+
+# We don't want to overwrite existing data, so we use add_documents
+vector_store.add_documents(documents=all_chunks)
+
+print(f"✅ Ingestion complete! Vector store updated at {CHROMA_DIR}")

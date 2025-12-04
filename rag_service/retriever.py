@@ -7,17 +7,17 @@ class Retriever:
     def __init__(self, num_docs: int = 5):
         print("Initializing embedding function...")
         self.embedding_function = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
+        self.num_docs = num_docs
 
+    def get_context(self, query: str) -> str:
         print(f"Loading vector store from: {CHROMA_DIR}")
-        self.vector_store = Chroma(
+        vector_store = Chroma(
             persist_directory=CHROMA_DIR,
             embedding_function=self.embedding_function,
             collection_name=COLLECTION_NAME
         )
-        self.retriever = self.vector_store.as_retriever(search_kwargs={"k": num_docs})
+        retriever = vector_store.as_retriever(search_kwargs={"k": self.num_docs})
         print("Retriever initialized.")
-
-    def get_context(self, query: str) -> str:
-        retrieved_docs = self.retriever.invoke(query)
+        retrieved_docs = retriever.invoke(query)
         formatted_context = "\n\n---\n\n".join(doc.page_content for doc in retrieved_docs)
         return formatted_context

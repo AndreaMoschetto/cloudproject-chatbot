@@ -11,6 +11,7 @@ on:
       - 'docs/**'
       - 'README.md'
       - 'env.example'
+      - '*.svg'
 env:
   AWS_REGION: us-east-1
   AWS_ACCOUNT_ID: "339713077362" 

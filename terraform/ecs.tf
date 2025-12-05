@@ -94,7 +94,7 @@ resource "aws_ecs_task_definition" "backend" {
     {
       name  = "orchestrator"
       image = aws_ecr_repository.orchestrator.repository_url
-      portMappings = [{ containerPort = 8000 }]
+      portMappings = [{ containerPort = 8001 }]
       environment = [
         { name = "RAG_SERVICE_URL", value = "http://127.0.0.1:8002" }, # Localhost since both containers are in the same task
         { name = "USE_DYNAMODB", value = "true" },
@@ -131,7 +131,8 @@ resource "aws_ecs_task_definition" "backend" {
       image = "chromadb/chroma:latest" # Official ChromaDB Server Image from Docker Hub
       portMappings = [{ containerPort = 8003 }]
       environment = [
-        { name = "IS_PERSISTENT", value = "TRUE" } # Tells ChromaDB to save an ephemeral DB to disk
+        { name = "IS_PERSISTENT", value = "TRUE" }, # Tells ChromaDB to save an ephemeral DB to disk
+        { name = "CHROMA_SERVER_HTTP_PORT", value = "8003" }
       ]
       logConfiguration = {
         logDriver = "awslogs", options = { "awslogs-group" = "/ecs/cloud-nlp-backend", "awslogs-region" = "us-east-1", "awslogs-stream-prefix" = "chroma" }
@@ -178,6 +179,6 @@ resource "aws_ecs_service" "backend" {
   load_balancer {
     target_group_arn = aws_lb_target_group.backend.arn
     container_name   = "orchestrator"
-    container_port   = 8000
+    container_port   = 8001
   }
 }

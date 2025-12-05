@@ -6,11 +6,13 @@ services:
     build: ./frontend
     container_name: nlp-frontend
     ports:
-      - "8001:8000"
+      # MODIFICA 1: Spostiamo l'accesso dal browser alla 8080 per liberare la 8001
+      - "8080:8000" 
     env_file:
       - .env
     environment:
-      - BACKEND_URL=http://orchestrator:8000
+      # MODIFICA 2: Il backend ora ascolta sulla 8001 interna!
+      - BACKEND_URL=http://orchestrator:8001
     depends_on:
       - orchestrator
     networks:
@@ -21,7 +23,8 @@ services:
     build: ./orchestrator
     container_name: nlp-orchestrator
     ports:
-      - "8000:8000"
+      # Questo va bene: mappa la 8001 del Mac sulla 8001 del container
+      - "8001:8001"
     environment:
       - RAG_SERVICE_URL=http://rag-service:8002
       - USE_DYNAMODB=true

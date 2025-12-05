@@ -56,7 +56,7 @@ resource "aws_lb_target_group" "frontend" {
 # 2. Backend
 resource "aws_lb_target_group" "backend" {
   name        = "cloud-nlp-backend-tg"
-  port        = 8000
+  port        = 8001
   protocol    = "HTTP"
   vpc_id      = aws_vpc.main.id
   target_type = "ip"

@@ -118,21 +118,20 @@ resource "aws_ecs_task_definition" "backend" {
         { name = "DATA_DIR", value = "/app/data" },
         { name = "NUM_DOCS", value = "5" },
         { name = "CHROMA_SERVER_HOST", value = "127.0.0.1" },
-        { name = "CHROMA_SERVER_PORT", value = "8003" },
+        { name = "CHROMA_SERVER_PORT", value = "8000" },
       ]
       logConfiguration = {
         logDriver = "awslogs"
         options = { "awslogs-group" = "/ecs/cloud-nlp-backend", "awslogs-region" = "us-east-1", "awslogs-stream-prefix" = "rag" }
       }
     },
-    # Container C: ChromaDB Server (Official Lightweight Image)
+    # ChromaDB Server (Pulito, porta standard 8000)
     {
       name  = "chroma-server"
-      image = "chromadb/chroma:latest" # Official ChromaDB Server Image from Docker Hub
-      portMappings = [{ containerPort = 8003 }]
+      image = "chromadb/chroma:latest"
+      portMappings = [{ containerPort = 8000 }]
       environment = [
-        { name = "IS_PERSISTENT", value = "TRUE" }, # Tells ChromaDB to save an ephemeral DB to disk
-        { name = "CHROMA_SERVER_HTTP_PORT", value = "8003" }
+        { name = "IS_PERSISTENT", value = "TRUE" }
       ]
       logConfiguration = {
         logDriver = "awslogs", options = { "awslogs-group" = "/ecs/cloud-nlp-backend", "awslogs-region" = "us-east-1", "awslogs-stream-prefix" = "chroma" }

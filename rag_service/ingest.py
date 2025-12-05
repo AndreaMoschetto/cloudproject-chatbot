@@ -56,7 +56,7 @@ if not all_chunks:
 
 print(f"\nProcessed {processed_files} files, {len(all_chunks)} total chunks.")
 
-print(f"Connecting to vector store at {CHROMA_DIR}...")
+print("Connecting to vector store...")
 
 if CHROMA_SERVER_HOST and CHROMA_SERVER_PORT:
     print(f"🔌 Connecting to ChromaDB Server at {CHROMA_SERVER_HOST}:{CHROMA_SERVER_PORT}")

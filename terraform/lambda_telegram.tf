@@ -13,7 +13,7 @@ resource "aws_lambda_function" "telegram_bot" {
   handler          = "telegram_bot.lambda_handler"
   runtime          = "python3.11"
   source_code_hash = data.archive_file.telegram_zip.output_base64sha256
-  timeout          = 60 # A bit of time to download large PDFs
+  timeout          = 300 # A bit of time to download large PDFs
   environment {
     variables = {
       TELEGRAM_TOKEN = var.telegram_token

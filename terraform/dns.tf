@@ -73,8 +73,24 @@ resource "aws_lb_listener_rule" "https_backend_rule" {
     }
   }
 }
+# --- ADDITIONAL RULE FOR FILES (To overcome the 5 path limit) ---
+resource "aws_lb_listener_rule" "https_backend_files_rule" {
+  listener_arn = aws_lb_listener.https.arn
+  priority     = 101 # Different priority required
 
-# --- 7. POINTS THE DOMAIN TO THE LOAD BALANCER (Record A) ---
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.backend.arn # Always sends to the same backend
+  }
+
+  condition {
+    path_pattern {
+      values = ["/files", "/files/*"]
+    }
+  }
+}
+
+# --- POINTS THE DOMAIN TO THE LOAD BALANCER (Record A) ---
 # This says: "Whoever types am-cloudnlpchatbot.site goes to the ALB address"
 resource "aws_route53_record" "www" {
   zone_id = data.aws_route53_zone.main.zone_id

@@ -14,12 +14,31 @@ from constants import (
 parser = argparse.ArgumentParser()
 parser.add_argument('--size', type=int, default=3000, help='Size of each text chunk')
 parser.add_argument('--overlap', type=int, default=200, help='Size of each text chunk overlap')
+parser.add_argument('--file', type=str, default=None, help="Specific file to process (optional)")
 args = parser.parse_args()
 
 print("Initializing embedding function...")
 embedding_function = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
 
-print(f"Loading PDF from {DATA_DIR}...")
+print(f"Loading {args.file if args.file else 'all PDFs'} from {DATA_DIR}...")
+
+files_to_process = []
+if args.file:
+    # Se c'è l'argomento, processiamo SOLO questo file
+    file_path = os.path.join(DATA_DIR, args.file)
+    if os.path.exists(file_path):
+        files_to_process.append(args.file)
+    else:
+        print(f"⚠️ File {args.file} not found in {DATA_DIR}. Skipping.")
+        exit()
+else:
+    print(f"Scanning {DATA_DIR}...")
+    files_to_process = [f for f in os.listdir(DATA_DIR) if f.endswith(".pdf")]
+
+if not files_to_process:
+    print("No files to process.")
+    exit()
+
 
 all_chunks = []
 processed_files = 0
@@ -29,26 +48,25 @@ splitter = RecursiveCharacterTextSplitter(
     length_function=len
 )
 
-for filename in os.listdir(DATA_DIR):
-    if filename.endswith(".pdf"):
-        pdf_path = os.path.join(DATA_DIR, filename)
-        print(f"Processing {pdf_path}...")
-        try:
-            md_text = pymu.to_markdown(pdf_path)
-            chunks = splitter.split_text(md_text)
-            for i, chunk in enumerate(chunks):
-                all_chunks.append(
-                    Document(
-                        page_content=chunk,
-                        metadata={
-                            "source": filename,
-                            "chunk_index": i
-                        }
-                    )
+for filename in files_to_process:
+    pdf_path = os.path.join(DATA_DIR, filename)
+    print(f"Processing {pdf_path}...")
+    try:
+        md_text = pymu.to_markdown(pdf_path)
+        chunks = splitter.split_text(md_text)
+        for i, chunk in enumerate(chunks):
+            all_chunks.append(
+                Document(
+                    page_content=chunk,
+                    metadata={
+                        "source": filename,
+                        "chunk_index": i
+                    }
                 )
-            processed_files += 1
-        except Exception as e:
-            print(f"Error processing {pdf_path}: {e}")
+            )
+        processed_files += 1
+    except Exception as e:
+        print(f"Error processing {pdf_path}: {e}")
 
 if not all_chunks:
     print("No documents were successfully processed. Exiting.")
@@ -71,7 +89,10 @@ vector_store = Chroma(
     embedding_function=embedding_function,
 )
 
-print("Adding documents to vector store...")
-vector_store.add_documents(documents=all_chunks)
 
-print(f"✅ Ingestion complete! Vector store updated at {CHROMA_DIR}")
+if all_chunks:
+    print(f"Adding {len(all_chunks)} chunks to vector store...")
+    vector_store.add_documents(documents=all_chunks)
+    print(f"✅ Ingestion complete for: {files_to_process}")
+else:
+    print("No chunks generated.")

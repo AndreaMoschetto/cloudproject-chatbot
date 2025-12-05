@@ -2,10 +2,22 @@ import json
 import os
 import urllib.request
 import boto3
+import re
 
-TOKEN = os.environ['TELEGRAM_TOKEN']
-S3_BUCKET = os.environ['S3_BUCKET_NAME']
+# from terraform
+TOKEN = os.environ.get('TELEGRAM_TOKEN')
+S3_BUCKET = os.environ.get('S3_BUCKET_NAME')
+ORCHESTRATOR_URL = os.environ.get('ORCHESTRATOR_URL', '')
+
 BASE_URL = f"https://api.telegram.org/bot{TOKEN}"
+
+
+def sanitize_filename(filename):
+    """Sostituisce spazi e caratteri non alfanumerici con underscore"""
+    name, ext = os.path.splitext(filename)
+    clean_name = re.sub(r'[^a-zA-Z0-9]', '_', name)
+    clean_name = re.sub(r'_+', '_', clean_name)
+    return f"{clean_name}{ext}"
 
 
 def lambda_handler(event, context):
@@ -14,44 +26,95 @@ def lambda_handler(event, context):
     try:
         body = json.loads(event['body'])
 
-        # Manage incoming messages
         if 'message' in body:
             message = body['message']
             chat_id = message['chat']['id']
 
-            # CASE 1: It's a Document (PDF, etc.)
             if 'document' in message:
                 file_id = message['document']['file_id']
-                file_name = message['document'].get('file_name', 'document.pdf')
+                raw_filename = message['document'].get('file_name', 'document.pdf')
                 mime_type = message['document'].get('mime_type', '')
 
-                # Quick filter: only accept PDFs
-                if 'pdf' not in mime_type and not file_name.endswith('.pdf'):
-                    send_message(chat_id, "⚠️ I only accept PDF files.")
+                if 'pdf' not in mime_type and not raw_filename.endswith('.pdf'):
+                    send_message(chat_id, "⚠️ Accetto solo file PDF.")
                     return {'statusCode': 200}
 
-                send_message(chat_id, "⏳ Downloading the file...")
-
-                # 1. Request the file path from Telegram
+                file_name = sanitize_filename(raw_filename)
+                send_message(chat_id, f"⏳ Scarico: {file_name} ...")
                 file_path = get_telegram_file_path(file_id)
-
-                # 2. Build the download URL
                 download_url = f"https://api.telegram.org/file/bot{TOKEN}/{file_path}"
 
-                # 3. Download from Telegram and upload to S3 (Direct streaming)
                 s3 = boto3.client('s3')
                 with urllib.request.urlopen(download_url) as f:
-                    s3.upload_fileobj(f, S3_BUCKET, file_name)
+                    s3.upload_fileobj(
+                        f,
+                        S3_BUCKET,
+                        file_name,
+                        ExtraArgs={"Metadata": {"chat_id": str(chat_id)}}
+                    )
+                send_message(chat_id, f"✅ File **{file_name}** loaded on S3!\nThe RAG system is processing it. I will notify you when it's done.")
 
-                send_message(chat_id, f"✅ File **{file_name}** uploaded to S3!\nThe RAG system is analyzing it.")
-
-            # CASE 2: It's just text
             elif 'text' in message:
-                text = message['text']
+                text = message['text'].strip()
+
                 if text == "/start":
-                    send_message(chat_id, "Hello! 👋\nSend me a PDF file and I'll add it to the Chatbot's knowledge.")
+                    msg = (
+                        "Hello! 👋 I'm the CloudNLP bot.\n\n"
+                        "📄 **Send a PDF** to upload it to the Knowledge Base.\n"
+                        "📂 **/list** - See uploaded files\n"
+                        "🗑️ **/delete <name>** - Delete a file"
+                    )
+                    send_message(chat_id, msg)
+
+                elif text == "/list":
+                    # Call the Orchestrator to get the list of files
+                    if not ORCHESTRATOR_URL:
+                        send_message(chat_id, "❌ Configuration error: ORCHESTRATOR_URL missing.")
+                        return {'statusCode': 200}
+
+                    try:
+                        # Remove trailing slash from base URL
+                        api_url = f"{ORCHESTRATOR_URL.rstrip('/')}/files"
+                        req = urllib.request.Request(api_url)
+                        with urllib.request.urlopen(req) as response:
+                            data = json.loads(response.read())
+                            files = data.get("files", [])
+                            if files:
+                                file_list = "\n".join([f"- `{f}`" for f in files])
+                                send_message(chat_id, f"📂 **Files in the system:**\n{file_list}")
+                            else:
+                                send_message(chat_id, "📭 No files found.")
+                    except Exception as e:
+                        print(f"List error: {e}")
+                        send_message(chat_id, f"❌ Error retrieving list: {e}")
+
+                elif text.startswith("/delete"):
+                    # Example command: /delete my_file.pdf
+                    parts = text.split(maxsplit=1)
+                    if len(parts) < 2:
+                        send_message(chat_id, "⚠️ Usage: `/delete filename.pdf`")
+                    else:
+                        filename = parts[1].strip()
+                        if not ORCHESTRATOR_URL:
+                            send_message(chat_id, "❌ Configuration error: ORCHESTRATOR_URL missing.")
+                            return {'statusCode': 200}
+
+                        try:
+                            api_url = f"{ORCHESTRATOR_URL.rstrip('/')}/files/{filename}"
+                            # Create a DELETE request
+                            req = urllib.request.Request(api_url, method='DELETE')
+                            urllib.request.urlopen(req)
+                            send_message(chat_id, f"🗑️ File **{filename}** deleted successfully.")
+                        except urllib.error.HTTPError as e:
+                            if e.code == 404:
+                                send_message(chat_id, f"⚠️ File **{filename}** not found.")
+                            else:
+                                send_message(chat_id, f"❌ Deletion error: {e}")
+                        except Exception as e:
+                            send_message(chat_id, f"❌ Generic error: {e}")
+
                 else:
-                    send_message(chat_id, "I don't speak much. Send me a PDF!")
+                    send_message(chat_id, "Unrecognized command. Use /start for help.")
 
         return {'statusCode': 200}
 

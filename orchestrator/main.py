@@ -71,3 +71,19 @@ async def trigger_ingestion(request: IngestRequest):
     except Exception as e:
         print(f"Error forwarding to RAG: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/files")
+async def get_files():
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(f"{RAG_SERVICE_URL}/files")
+        return resp.json()
+
+
+@app.delete("/files/{filename}")
+async def delete_file(filename: str):
+    async with httpx.AsyncClient() as client:
+        resp = await client.delete(f"{RAG_SERVICE_URL}/files/{filename}")
+        if resp.status_code != 200:
+            raise HTTPException(status_code=resp.status_code, detail="Error deleting file")
+        return resp.json()

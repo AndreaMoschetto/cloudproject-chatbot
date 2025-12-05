@@ -16,8 +16,9 @@ resource "aws_lambda_function" "telegram_bot" {
   timeout          = 300 # A bit of time to download large PDFs
   environment {
     variables = {
-      TELEGRAM_TOKEN = var.telegram_token
-      S3_BUCKET_NAME = aws_s3_bucket.pdf_bucket.id
+      TELEGRAM_TOKEN = var.telegram_token,
+      S3_BUCKET_NAME = aws_s3_bucket.pdf_bucket.id,
+      ORCHESTRATOR_URL = "https://${data.aws_route53_zone.main.name}"
     }
   }
 }

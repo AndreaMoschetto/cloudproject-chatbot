@@ -119,6 +119,7 @@ resource "aws_ecs_task_definition" "backend" {
         { name = "NUM_DOCS", value = "5" },
         { name = "CHROMA_SERVER_HOST", value = "127.0.0.1" },
         { name = "CHROMA_SERVER_PORT", value = "8000" },
+        { name = "TELEGRAM_TOKEN", value = var.telegram_token }
       ]
       logConfiguration = {
         logDriver = "awslogs"

@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+  # FRONTEND (Chainlit)
   frontend:
     build: ./frontend
     container_name: nlp-frontend
@@ -15,39 +16,56 @@ services:
     networks:
       - app-network
 
+  # ORCHESTRATOR (FastAPI Gateway)
   orchestrator:
     build: ./orchestrator
     container_name: nlp-orchestrator
     ports:
       - "8000:8000"
-    
     environment:
       - RAG_SERVICE_URL=http://rag-service:8002
       - USE_DYNAMODB=true
       - DYNAMODB_TABLE=cloud-nlp-history
-      
-    # only for local development
+      - AWS_DEFAULT_REGION=us-east-1
     volumes:
       - ~/.aws:/root/.aws:ro
-      
     depends_on:
       - rag-service
     networks:
       - app-network
 
+  # RAG SERVICE (Logic & Ingestion)
   rag-service:
     build: ./rag_service
     container_name: nlp-rag
     ports:
       - "8002:8002"
-    volumes:
-      - ./rag_service/chroma_db:/app/chroma_db
     env_file:
-      - .env  # GOOGLE_API_KEY
+      - .env # GOOGLE_API_KEY, S3_BUCKET_NAME, TELEGRAM_TOKEN
     environment:
-      - CHROMA_DIR=/app/chroma_db
+      - CHROMA_SERVER_HOST=chroma-server
+      - CHROMA_SERVER_PORT=8000 # From container's perspective
+      # -------------------------------------------
       - DATA_DIR=/app/data
       - NUM_DOCS=5
+      - AWS_DEFAULT_REGION=us-east-1
+    volumes:
+      - ~/.aws:/root/.aws:ro
+    depends_on:
+      - chroma-server
+    networks:
+      - app-network
+
+  # CHROMA DB SERVER
+  chroma-server:
+    image: chromadb/chroma:latest
+    container_name: nlp-chroma
+    ports:
+      - "8003:8000"
+    environment:
+      - IS_PERSISTENT=TRUE # So data is saved to disk
+    volumes:
+      - ./chroma_data:/chroma/chroma
     networks:
       - app-network
 

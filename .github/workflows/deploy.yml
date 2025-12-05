@@ -1,9 +1,16 @@
 name: Deploy to Amazon ECR
 
+
 on:
   push:
     branches:
       - main
+    paths-ignore:
+      - '.github/**'
+      - 'terraform/**'
+      - 'docs/**'
+      - 'README.md'
+      - 'env.example'
 env:
   AWS_REGION: us-east-1
   AWS_ACCOUNT_ID: "339713077362" 

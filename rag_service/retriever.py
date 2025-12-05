@@ -1,7 +1,18 @@
 import chromadb
 from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
-from constants import CHROMA_DIR, COLLECTION_NAME, EMBEDDING_MODEL_NAME
+from constants import CHROMA_DIR, COLLECTION_NAME, EMBEDDING_MODEL_NAME, CHROMA_SERVER_HOST, CHROMA_SERVER_PORT
+
+
+def get_chroma_client():
+    """Factory: Restituisce un HttpClient se configurato, altrimenti PersistentClient"""
+    if CHROMA_SERVER_HOST and CHROMA_SERVER_PORT:
+        print(f"🔌 Connecting to ChromaDB Server at {CHROMA_SERVER_HOST}:{CHROMA_SERVER_PORT}")
+        # In modalità server, non usiamo path locale
+        return chromadb.HttpClient(host=CHROMA_SERVER_HOST, port=CHROMA_SERVER_PORT)
+    else:
+        print(f"📂 Connecting to local vector store at {CHROMA_DIR}")
+        return chromadb.PersistentClient(path=CHROMA_DIR)
 
 
 class Retriever:
@@ -9,36 +20,24 @@ class Retriever:
         print("Initializing embedding function (Heavy Model)...")
         self.embedding_function = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
         self.num_docs = num_docs
-        print("Retriever initialized. DB connection will be lazy-loaded.")
 
     def get_context(self, query: str) -> str:
-        print(f"🔄 Re-connecting to vector store at: {CHROMA_DIR}")
+        # Otteniamo il client corretto (Server o Locale)
+        client = get_chroma_client()
 
+        vector_store = Chroma(
+            client=client,
+            collection_name=COLLECTION_NAME,
+            embedding_function=self.embedding_function,
+        )
+
+        retriever = vector_store.as_retriever(search_kwargs={"k": self.num_docs})
+
+        print(f"🔎 Retrieving docs for: {query}")
         try:
-            # This avoids "Nothing found on disk" errors when ingestion updates files while the API is running.
-            fresh_client = chromadb.PersistentClient(path=CHROMA_DIR)
-
-            vector_store = Chroma(
-                client=fresh_client,
-                collection_name=COLLECTION_NAME,
-                embedding_function=self.embedding_function,
-            )
-
-            # on-the-fly we create a retriever
-            retriever = vector_store.as_retriever(search_kwargs={"k": self.num_docs})
-
-            print(f"🔎 Retrieving docs for: {query}")
             retrieved_docs = retriever.invoke(query)
-
-            if not retrieved_docs:
-                print("⚠️ No documents found in the database.")
-                return ""
-
-            print(f"✅ Found {len(retrieved_docs)} documents.")
-
             formatted_context = "\n\n---\n\n".join(doc.page_content for doc in retrieved_docs)
             return formatted_context
-
         except Exception as e:
-            print(f"❌ Critical Error accessing Vector DB: {e}")
+            print(f"❌ Error retrieving docs: {e}")
             return ""

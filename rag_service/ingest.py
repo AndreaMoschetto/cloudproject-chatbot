@@ -6,7 +6,10 @@ import pymupdf4llm as pymu
 from langchain_chroma import Chroma
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
-from constants import DATA_DIR, CHROMA_DIR, EMBEDDING_MODEL_NAME, COLLECTION_NAME
+from constants import (
+    DATA_DIR, CHROMA_DIR, EMBEDDING_MODEL_NAME, COLLECTION_NAME,
+    CHROMA_SERVER_HOST, CHROMA_SERVER_PORT
+)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--size', type=int, default=3000, help='Size of each text chunk')
@@ -55,9 +58,12 @@ print(f"\nProcessed {processed_files} files, {len(all_chunks)} total chunks.")
 
 print(f"Connecting to vector store at {CHROMA_DIR}...")
 
-# Instead of using Chroma.from_documents (which resets/creates), we use the Persistent Client.
-# This ensures we write in the same way the Retriever reads.
-client = chromadb.PersistentClient(path=CHROMA_DIR)
+if CHROMA_SERVER_HOST and CHROMA_SERVER_PORT:
+    print(f"🔌 Connecting to ChromaDB Server at {CHROMA_SERVER_HOST}:{CHROMA_SERVER_PORT}")
+    client = chromadb.HttpClient(host=CHROMA_SERVER_HOST, port=CHROMA_SERVER_PORT)
+else:
+    print(f"📂 Connecting to local vector store at {CHROMA_DIR}")
+    client = chromadb.PersistentClient(path=CHROMA_DIR)
 
 vector_store = Chroma(
     client=client,
@@ -66,8 +72,6 @@ vector_store = Chroma(
 )
 
 print("Adding documents to vector store...")
-
-# We don't want to overwrite existing data, so we use add_documents
 vector_store.add_documents(documents=all_chunks)
 
 print(f"✅ Ingestion complete! Vector store updated at {CHROMA_DIR}")

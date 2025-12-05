@@ -116,11 +116,25 @@ resource "aws_ecs_task_definition" "backend" {
         { name = "GOOGLE_API_KEY", value = var.google_api_key },
         { name = "CHROMA_DIR", value = "/app/chroma_db" },
         { name = "DATA_DIR", value = "/app/data" },
-        { name = "NUM_DOCS", value = "5" }
+        { name = "NUM_DOCS", value = "5" },
+        { name = "CHROMA_SERVER_HOST", value = "127.0.0.1" },
+        { name = "CHROMA_SERVER_PORT", value = "8003" },
       ]
       logConfiguration = {
         logDriver = "awslogs"
         options = { "awslogs-group" = "/ecs/cloud-nlp-backend", "awslogs-region" = "us-east-1", "awslogs-stream-prefix" = "rag" }
+      }
+    },
+    # Container C: ChromaDB Server (Official Lightweight Image)
+    {
+      name  = "chroma-server"
+      image = "chromadb/chroma:latest" # Official ChromaDB Server Image from Docker Hub
+      portMappings = [{ containerPort = 8003 }]
+      environment = [
+        { name = "IS_PERSISTENT", value = "TRUE" } # Tells ChromaDB to save an ephemeral DB to disk
+      ]
+      logConfiguration = {
+        logDriver = "awslogs", options = { "awslogs-group" = "/ecs/cloud-nlp-backend", "awslogs-region" = "us-east-1", "awslogs-stream-prefix" = "chroma" }
       }
     }
   ])

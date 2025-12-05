@@ -64,7 +64,7 @@ def generate_response(request: RAGRequest):
 def ingest_from_s3(request: IngestRequest, background_tasks: BackgroundTasks):
     # It will be visible thanks to PYTHONUNBUFFERED
     print(f"📥 [API] Received request for: {request.file_key}")
-    background_tasks.add_task(run_ingestion_background, request.file_key)
+    background_tasks.add_task(run_ingestion_background, request.file_key, request.chat_id)
     return {"status": "accepted", "message": "Ingestion started in background"}
 
 

@@ -23,7 +23,7 @@ For an in-depth review of architectural choices, consult the following chapters:
 
 The project implements a hybrid **Cloud-Native** architecture (Container + Serverless) hosted on AWS.
 
-![Architecture Diagram](diagram.svg)
+![Architecture Diagram](imgs/diagram.svg)
 
 
 ```bash
@@ -83,31 +83,43 @@ cloud-nlp-project/
   * **Terraform** installed (`brew install terraform`).
   * **Docker** installed.
   * **Domain** registered (e.g., on Namecheap) and connected to an AWS Route53 Hosted Zone.
+  * **TelegramBot** created with BotFather.
 
 ### 1\. Variable Configuration (`.env`)
-
-Create a `.env` file in the project root.
-*Note: OAUTH and S3 variables will be populated AFTER the first Terraform deploy.*
-
-```ini
-GOOGLE_API_KEY="AIzaSy..."
-CHAINLIT_AUTH_SECRET="RandomSecretString"
-TELEGRAM_TOKEN="123456:ABC-DEF..."
+You need to configure two different kind of variables: AWS credentials (for Terraform deploy and Github deploy) and API Keys.
+   
+#### Terraform secrets
+First of all look for the aws session credentials in your dashboard, it must be something like that:
+``` text
+[default]
+aws_access_key_id=AIOEFNADKADFIEJF1423
+aws_secret_access_key=3sijf/hdauboOkddhsiam
+aws_session_token=IQoJb3JpZ2luX2VjEJf//////////wEaCXVzLXdlc3QtMiJHME...
 ```
+Copy the entire text and save it as a file called `~/.aws/credentials` so that terraform can deploy the cloud infrastructure in the correct aws account.
+
+#### Github secrets
+To deploy the code, Github needs these secrets too, so save it as three different repository secrets:
+Go to `Settings > Secrets and variables > Actions > New repository secret `.
+![Repo-Secrets-Image](imgs/reposecrets.png)
+
+#### API Keys
+Navigate to the `terraform/` folder, create a `terraform.tfvars` file (ignored by git) and save your google api key from the gemini dashbord, the telegram bot token given by BotFather and a random string used by chainlit authentication. Like so:
+```bash
+google_api_key       = "SIEjns..."
+telegram_token       = "bfc4123di..."
+chainlit_auth_secret = "RandomSecretAlphaNumericString"
+``` 
 
 ### 2\. Infrastructure Deployment (Terraform)
-
-Navigate to the `terraform/` folder. It is recommended to create a `terraform.tfvars` file (ignored by git) for secrets.
-
 ```bash
 cd terraform
 terraform init
 terraform apply
 ```
-
 *Confirm with `yes`. Wait 5-10 minutes for ACM certificate validation.*
 
-Upon completion, Terraform will return the necessary outputs (ECR URLs, Cognito ID, S3 Bucket). **Update the local `.env` file with these values.**
+Upon completion, Terraform will return the necessary outputs (ECR URLs, Cognito ID, S3 Bucket). **If you are doing a local test update the local `.env` file with these values. Otherwise  ignore it**
 
 ### 3\. Application Deployment (GitHub Actions)
 

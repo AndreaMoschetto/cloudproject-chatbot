@@ -55,9 +55,9 @@ def lambda_handler(event, context):
                     return {'statusCode': 200}
 
                 file_name = sanitize_filename(raw_filename)
-                
+
                 send_message(chat_id, f"⏳ Scarico: <code>{file_name}</code> ...")
-                
+
                 file_path = get_telegram_file_path(file_id)
                 download_url = f"https://api.telegram.org/file/bot{TOKEN}/{file_path}"
 

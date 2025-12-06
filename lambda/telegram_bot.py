@@ -8,7 +8,7 @@ import re
 TOKEN = os.environ.get('TELEGRAM_TOKEN')
 S3_BUCKET = os.environ.get('S3_BUCKET_NAME')
 ORCHESTRATOR_URL = os.environ.get('ORCHESTRATOR_URL', '')
-
+ALLOWED_IDS = os.environ.get('ALLOWED_IDS', '').split(',')
 BASE_URL = f"https://api.telegram.org/bot{TOKEN}"
 
 
@@ -29,6 +29,19 @@ def lambda_handler(event, context):
         if 'message' in body:
             message = body['message']
             chat_id = message['chat']['id']
+
+            # --- SOFT SECURITY BLOCK ---------------------------
+            if ALLOWED_IDS and ALLOWED_IDS != [''] and chat_id not in ALLOWED_IDS:
+                print(f"⛔ Unauthorized access attempt from Chat ID: {chat_id}")
+                msg = (
+                    "⛔ **ACCESS DENIED**\n"
+                    "You are not authorized to use this bot.\n\n"
+                    f"Your Chat ID is: `{chat_id}`\n"
+                    "Send this code to the administrator to request access."
+                )
+                send_message(chat_id, msg)
+                return {'statusCode': 200}
+            # ---------------------------------------------------
 
             if 'document' in message:
                 file_id = message['document']['file_id']

@@ -15,3 +15,9 @@ variable "chainlit_auth_secret" {
   type        = string
   sensitive   = true
 }
+
+variable "allowed_telegram_ids" {
+  description = "List of allowed Telegram user IDs comma separated"
+  type        = string
+  default     = "" 
+}

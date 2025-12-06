@@ -18,7 +18,8 @@ resource "aws_lambda_function" "telegram_bot" {
     variables = {
       TELEGRAM_TOKEN = var.telegram_token,
       S3_BUCKET_NAME = aws_s3_bucket.pdf_bucket.id,
-      ORCHESTRATOR_URL = "https://${data.aws_route53_zone.main.name}"
+      ORCHESTRATOR_URL = "https://${data.aws_route53_zone.main.name}",
+      ALLOWED_IDS      = var.allowed_telegram_ids
     }
   }
 }

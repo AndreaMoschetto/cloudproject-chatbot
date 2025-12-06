@@ -28,3 +28,16 @@ resource "aws_lambda_function_url" "telegram_webhook" {
   function_name      = aws_lambda_function.telegram_bot.function_name
   authorization_type = "NONE" # Public, so Telegram can call it
 }
+
+# --- 4. Set Telegram Webhook ---
+resource "null_resource" "set_telegram_webhook" {
+  # Questo blocco scatta ogni volta che l'URL della Lambda cambia
+  triggers = {
+    webhook_url = aws_lambda_function_url.telegram_webhook.function_url
+  }
+
+  provisioner "local-exec" {
+    # Lancia una chiamata CURL alle API di Telegram
+    command = "curl -X POST https://api.telegram.org/bot${var.telegram_token}/setWebhook?url=${aws_lambda_function_url.telegram_webhook.function_url}"
+  }
+}

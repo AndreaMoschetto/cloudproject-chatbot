@@ -21,6 +21,7 @@ class QueryResponse(BaseModel):
 
 class IngestRequest(BaseModel):
     file_key: str
+    chat_id: str | None = None
 
 
 @app.post("/query", response_model=QueryResponse)

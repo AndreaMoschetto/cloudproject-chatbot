@@ -34,17 +34,6 @@ class IngestRequest(BaseModel):
     chat_id: str | None = None
 
 
-def send_telegram_notification(chat_id, message):
-    """Invia un messaggio di notifica all'utente Telegram"""
-    if not chat_id or not TELEGRAM_TOKEN:
-        return
-    try:
-        url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-        requests.post(url, json={"chat_id": chat_id, "text": message, "parse_mode": "Markdown"})
-    except Exception as e:
-        print(f"⚠️ Failed to send Telegram notification: {e}")
-
-
 @app.post("/generate", response_model=RAGResponse)
 def generate_response(request: RAGRequest):
     try:
@@ -66,42 +55,6 @@ def ingest_from_s3(request: IngestRequest, background_tasks: BackgroundTasks):
     print(f"📥 [API] Received request for: {request.file_key}")
     background_tasks.add_task(run_ingestion_background, request.file_key, request.chat_id)
     return {"status": "accepted", "message": "Ingestion started in background"}
-
-
-def run_ingestion_background(file_key: str, chat_id: str = None):
-    print(f"🔄 [BACKGROUND] Starting ingestion logic for: {file_key}")
-    try:
-        s3 = boto3.client('s3')
-        filename = os.path.basename(file_key)
-        local_path = os.path.join(DATA_DIR, filename)
-
-        print(f"⬇️ Downloading {file_key} from S3...")
-        s3.download_file(S3_BUCKET_NAME, file_key, local_path)
-
-        print(f"🗑️ Deleting {file_key} from S3...")
-        s3.delete_object(Bucket=S3_BUCKET_NAME, Key=file_key)
-
-        print(f"🚀 Launching ingest.py subprocess for {file_key}...")
-        process = subprocess.Popen(
-            ["python", "ingest.py", "--file", filename],
-            stdout=sys.stdout,  # direct logs on CloudWatch
-            stderr=sys.stderr,
-            text=True
-        )
-        process.wait()  # no problem here, it's background task
-        if process.returncode == 0:
-            msg = f"✅ Ingestion completed for **{filename}**!"
-            if chat_id:
-                send_telegram_notification(chat_id, msg)
-        else:
-            msg = f"❌ Ingestion error for **{filename}**."
-            if chat_id:
-                send_telegram_notification(chat_id, msg)
-
-    except Exception as e:
-        print(f"💀 Critical Background Error: {e}")
-        if chat_id:
-            send_telegram_notification(chat_id, f"🔥 Critical system error: {str(e)}")
 
 
 @app.get("/files")
@@ -148,6 +101,53 @@ def delete_file(filename: str):
         status_msg.append(f"Vector DB delete failed: {str(e)}")
 
     return {"status": "success", "details": ", ".join(status_msg), "file": filename}
+
+
+def run_ingestion_background(file_key: str, chat_id: str = None):
+    print(f"🔄 [BACKGROUND] Starting ingestion logic for: {file_key}")
+    try:
+        s3 = boto3.client('s3')
+        filename = os.path.basename(file_key)
+        local_path = os.path.join(DATA_DIR, filename)
+
+        print(f"⬇️ Downloading {file_key} from S3...")
+        s3.download_file(S3_BUCKET_NAME, file_key, local_path)
+
+        print(f"🗑️ Deleting {file_key} from S3...")
+        s3.delete_object(Bucket=S3_BUCKET_NAME, Key=file_key)
+
+        print(f"🚀 Launching ingest.py subprocess for {file_key}...")
+        process = subprocess.Popen(
+            ["python", "ingest.py", "--file", filename],
+            stdout=sys.stdout,  # direct logs on CloudWatch
+            stderr=sys.stderr,
+            text=True
+        )
+        process.wait()  # no problem here, it's background task
+        if process.returncode == 0:
+            msg = f"✅ Ingestion completed for **{filename}**!"
+            if chat_id:
+                send_telegram_notification(chat_id, msg)
+        else:
+            msg = f"❌ Ingestion error for **{filename}**."
+            if chat_id:
+                send_telegram_notification(chat_id, msg)
+
+    except Exception as e:
+        print(f"💀 Critical Background Error: {e}")
+        if chat_id:
+            send_telegram_notification(chat_id, f"🔥 Critical system error: {str(e)}")
+
+
+def send_telegram_notification(chat_id, message):
+    """Invia un messaggio di notifica all'utente Telegram"""
+    if not chat_id or not TELEGRAM_TOKEN:
+        return
+    try:
+        url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+        requests.post(url, json={"chat_id": chat_id, "text": message, "parse_mode": "Markdown"})
+    except Exception as e:
+        print(f"⚠️ Failed to send Telegram notification: {e}")
 
 
 if __name__ == "__main__":

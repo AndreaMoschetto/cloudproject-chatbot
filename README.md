@@ -104,11 +104,12 @@ Go to `Settings > Secrets and variables > Actions > New repository secret `.
 ![Repo-Secrets-Image](imgs/repo_secrets.png)
 
 #### API Keys
-Navigate to the `terraform/` folder, create a `terraform.tfvars` file (ignored by git) and save your google api key from the gemini dashbord, the telegram bot token given by BotFather and a random string used by chainlit authentication. Like so:
+Navigate to the `terraform/` folder, create a `terraform.tfvars` file (ignored by git) and save your google api key from the gemini dashbord, the telegram bot token given by BotFather, a random string used by chainlit authentication and your telegram user ID. Like so:
 ```bash
 google_api_key       = "SIEjns..."
 telegram_token       = "bfc4123di..."
 chainlit_auth_secret = "RandomSecretAlphaNumericString"
+allowed_telegram_ids = "123456789"
 ``` 
 
 ### 2\. Infrastructure Deployment (Terraform)
@@ -145,7 +146,6 @@ Open the bot on Telegram and send `/start`.
 3.  Start chatting.
 
 ### Document Management (Telegram)
-
 The bot allows managing the Knowledge Base on the go:
 
   * **Upload:** Send a PDF file directly in the chat.
@@ -153,3 +153,12 @@ The bot allows managing the Knowledge Base on the go:
   * **Deletion:** Send `/delete filename.pdf`.
 
 Every operation sends a real-time notification regarding the ingestion status.
+
+#### Bot Whitelist
+If another user is not whitelisted (therefore his telegram UserID is not in the `allowed_telegram_ids` variable) the bot will warn him about it with a message like this:
+> ⛔️ ACCESS DENIED
+> You are not authorized to use this bot.
+> Your Chat ID is: 123456789
+> Send this code to the administrator to request access 
+
+So you can add his UsedID to the `allowed_telegram_ids` variable (comma separated from existing ones)

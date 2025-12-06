@@ -26,3 +26,10 @@ Terraform is not limited to creating static resources but also handles complex d
 1.  **Automatic DNS Validation:** ACM certificate creation automatically waits for validation DNS records to propagate on Route53.
 2.  **Variable Injection:** Service URLs (like the ALB endpoint or Cognito domain) are dynamically injected as environment variables into ECS container definitions and Lambda Functions.
 3.  **Local Provisioning (`null_resource`):** We use the `local-exec` provider to run commands on the host machine at the end of deployment, such as automating the `curl` call to register the Telegram bot Webhook.
+
+---
+<div align="center">
+
+[← Previous Chapter](04_data_ingestion_events.md) | [🏠 Back to Home](../README.md) | [Next Chapter: Security →](06_security_and_auth.md)
+
+</div>

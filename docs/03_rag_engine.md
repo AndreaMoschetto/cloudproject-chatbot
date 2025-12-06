@@ -23,15 +23,28 @@ Response generation is delegated to Google's **Gemini Pro** model, accessible vi
 * **Prompt Engineering:** A specific template instructs the model to behave as a technical assistant, requiring it to answer *exclusively* based on the provided context ("based *only* on the following context") to minimize hallucinations.
 
 ## The RAG Flow
+![RAG-Diagram](../imgs/rag.png)
+### Phase 1: Vector storage
+One or more files are going to be partitioned in several chunks, each chunk is given to an embedding model which has the task to compress it converting it into a vector.
+Each vector is stored in a vector store.
 
-### Phase 1: Retrieval (The "Retriever")
+### Phase 2: Retrieval
 When the user asks a question:
 1.  The query is converted into an embedding by the same HuggingFace model.
 2.  A semantic similarity search (cosine similarity) is performed on ChromaDB.
 3.  The system retrieves the `k` (default 5) most relevant text "chunks" relative to the question.
 
-### Phase 2: Generation (The "Generator")
+### Phase 3: Generation
 1.  The retrieved chunks are concatenated to form the "Context".
 2.  The Prompt is constructed by combining: System Instructions + Context + User Question.
 3.  The complete Prompt is sent to Gemini Pro.
 4.  The generated answer is returned to the user, along with the sources used (for transparency).
+
+In this way you can make an LLM answer questions about topics that are new to him without having to train it.
+
+---
+<div align="center">
+
+[← Previous Chapter](02_cloud_architecture.md) | [🏠 Back to Home](../README.md) | [Next Chapter: Ingestion Pipeline →](04_data_ingestion_events.md)
+
+</div>

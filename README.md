@@ -6,17 +6,19 @@
 
 ---
 
-## 📖 Technical Report Index
+## 📖 Technical Report
 For an in-depth review of architectural choices, consult the following chapters:
+### Table of content
 
-1.  [**Introduction and Goals**](docs/01_intro_and_goals.md): Overview and technology stack.
-2.  [**Cloud Architecture (Microservices on ECS)**](docs/02_cloud_architecture.md): Analysis of the Sidecar design pattern on AWS Fargate.
-3.  [**The RAG Engine (Retrieval-Augmented Generation)**](docs/03_rag_engine.md): ChromaDB Client/Server, Embeddings, and LLM.
-4.  [**Event-Driven Ingestion Pipeline**](docs/04_data_ingestion_events.md): From Telegram to S3, up to the Vector Store.
-5.  [**Infrastructure as Code (Terraform)**](docs/05_infrastructure_as_code.md): AWS resource management.
-6.  [**Security and Authentication**](docs/06_security_and_auth.md): Cognito, HTTPS, and Network Isolation.
-7.  [**CI/CD & DevOps**](docs/07_cicd_and_devops.md): Automatic deployment pipeline with GitHub Actions.
-
+*  [**Introduction and Goals**](docs/01_intro_and_goals.md)
+*  [**Cloud Architecture (Microservices on ECS)**](docs/02_cloud_architecture.md)
+*  [**The RAG Engine (Retrieval-Augmented Generation)**](docs/03_rag_engine.md)
+* [**Event-Driven Ingestion Pipeline**](docs/04_data_ingestion_events.md)
+*  [**Infrastructure as Code (Terraform)**](docs/05_infrastructure_as_code.md)
+*  [**Security and Authentication**](docs/06_security_and_auth.md)
+*  [**CI/CD & DevOps**](docs/07_cicd_and_devops.md)
+*  [**NEW Telegram Integration**](docs/08_telegram_integration.md)
+*  [**API Endpoints & Reference**](docs/09_api_reference.md)
 ---
 
 ## 🏛️ Architectural Overview
@@ -85,7 +87,7 @@ cloud-nlp-project/
   * **Domain** registered (e.g., on Namecheap) and connected to an AWS Route53 Hosted Zone.
   * **TelegramBot** created with BotFather.
 
-### 1\. Variable Configuration (`.env`)
+### 1. Variable Configuration (`.env`)
 You need to configure two different kind of variables: AWS credentials (for Terraform deploy and Github deploy) and API Keys.
    
 #### Terraform secrets
@@ -112,7 +114,7 @@ chainlit_auth_secret = "RandomSecretAlphaNumericString"
 allowed_telegram_ids = "123456789"
 ``` 
 
-### 2\. Infrastructure Deployment (Terraform)
+### 2. Infrastructure Deployment (Terraform)
 ```bash
 cd terraform
 terraform init
@@ -122,7 +124,7 @@ terraform apply
 
 Upon completion, Terraform will return the necessary outputs (ECR URLs, Cognito ID, S3 Bucket). **If you are doing a local test update the local `.env` file with these values. Otherwise  ignore it**
 
-### 3\. Application Deployment (GitHub Actions)
+### 3. Application Deployment (GitHub Actions)
 
 Push to the `main` branch. The CI/CD pipeline will activate automatically:
 
@@ -130,7 +132,7 @@ Push to the `main` branch. The CI/CD pipeline will activate automatically:
 2.  Push to Amazon ECR.
 3.  Force deployment on ECS ("Rolling Update").
 
-### 4\. Telegram Bot Setup
+### 4. Telegram Bot Setup
 
 On the first deploy, Terraform automatically configures the Webhook.
 Open the bot on Telegram and send `/start`.

@@ -1,5 +1,6 @@
 # 2. Cloud Architecture and Microservices
 
+![Architecture-diagram](../imgs/diagram.svg)
 The system architecture is designed to maximize modularity and security while minimizing management costs.
 
 ## Sidecar Pattern on ECS Fargate
@@ -15,7 +16,7 @@ The backend implements the **Sidecar** pattern, grouping three containers in the
 * **ChromaDB Server:** The persistent vector database.
 
 **Sidecar Advantages:**
-* **Localhost Communication:** The three containers communicate via `localhost` (loopback interface), ensuring zero latency and high security (traffic never leaves the task).
+* **Localhost Communication:** The three containers communicate via `localhost`, ensuring zero latency and high security (traffic never leaves the task).
 * **Resource Management:** They share the same CPU/RAM allocation (4GB), optimizing costs compared to three separate tasks.
 
 ## Networking and Load Balancing
@@ -23,3 +24,9 @@ An **Application Load Balancer (ALB)** manages all incoming traffic.
 * **Routing:** Path-based rules route `/query`, `/files`, `/ingest-s3` to the Backend and the rest to the Frontend.
 * **HTTPS Offloading:** The ALB terminates the secure connection (SSL) using a certificate managed by ACM, relieving containers from cryptographic load.
 * **Security Groups:** The "least privilege" rule was applied. The container Security Groups accept traffic **only** originating from the Load Balancer's Security Group. No direct internet access is allowed to the containers.
+---
+<div align="center">
+
+[← Previous Chapter](01_intro_and_goals.md) | [🏠 Back to Home](../README.md) | [Next Chapter: RAG Engine →](03_rag_engine.md)
+
+</div>

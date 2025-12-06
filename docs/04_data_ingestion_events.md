@@ -4,7 +4,7 @@ One of the distinctive features of the project is the asynchronous and multi-cha
 
 ## The Data Flow
 The goal is to allow the user to upload a document and make it "searchable" by the chatbot without blocking the main interface.
-
+![IngestionDiagram](../imgs/ingestion.png)
 ### Channel 1: Telegram Bot (Mobile)
 A Telegram bot acts as a remote input interface.
 1.  The user sends a PDF to the bot.
@@ -25,3 +25,10 @@ The RAG Service receives the request and leverages `FastAPI BackgroundTasks` to 
 4.  Notifies the user on Telegram of successful completion.
 
 This design ensures that heavy file ingestion never slows down the chat for other users.
+
+---
+<div align="center">
+
+[← Previous Chapter](03_rag_engine.md) | [🏠 Back to Home](../README.md) | [Next Chapter: Terraform (IaC) →](05_infrastructure_as_code.md)
+
+</div>

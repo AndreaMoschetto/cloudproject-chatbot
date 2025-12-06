@@ -27,7 +27,14 @@ Once images in the registry are updated, the pipeline forces a service update on
 * **Rolling Update:** ECS starts new tasks with updated images. Only when new tasks pass Load Balancer Health Checks are the old tasks terminated. This ensures deployment with zero (or minimal) downtime.
 
 ## Secret Management
-Sensitive secrets (Google and Telegram API Keys) are never written in the code.
-1.  They reside in the developer's local `terraform.tfvars` file (excluded from git).
+Sensitive secrets (AWS credentials, Google and Telegram API Keys) are never written in the code.
+1.  They reside in the developer's local `terraform.tfvars` file and inside the repository secrets github section(excluded from code).
 2.  Terraform injects them as encrypted environment variables into ECS Task Definitions.
 3.  Containers read them at startup via `os.getenv()`.
+
+---
+<div align="center">
+
+[← Previous Chapter](06_security_and_auth.md) | [🏠 Back to Home](../README.md) | [Next Chapter: Telegram Integration →](08_telegram_integration.md)
+
+</div>

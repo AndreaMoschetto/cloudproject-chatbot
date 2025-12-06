@@ -65,3 +65,11 @@ jobs:
       run: |
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./rag_service
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+    - name: Force ECS Deployment (Backend)
+      run: |
+        aws ecs update-service --cluster cloud-nlp-cluster --service cloud-nlp-backend-svc --force-new-deployment --region us-east-1
+
+    - name: Force ECS Deployment (Frontend)
+      run: |
+        aws ecs update-service --cluster cloud-nlp-cluster --service cloud-nlp-frontend-svc --force-new-deployment --region us-east-1

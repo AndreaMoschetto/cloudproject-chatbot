@@ -23,9 +23,7 @@ For an in-depth review of architectural choices, consult the following chapters:
 
 The project implements a hybrid **Cloud-Native** architecture (Container + Serverless) hosted on AWS.
 
-![Architecture Diagram](diagram.svg) 
-
-[Image of CloudNLP Architecture Diagram]
+![Architecture Diagram](diagram.svg)
 
 
 ```bash

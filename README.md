@@ -101,7 +101,7 @@ Copy the entire text and save it as a file called `~/.aws/credentials` so that t
 #### Github secrets
 To deploy the code, Github needs these secrets too, so save it as three different repository secrets:
 Go to `Settings > Secrets and variables > Actions > New repository secret `.
-![Repo-Secrets-Image](imgs/reposecrets.png)
+![Repo-Secrets-Image](imgs/repo_secrets.png)
 
 #### API Keys
 Navigate to the `terraform/` folder, create a `terraform.tfvars` file (ignored by git) and save your google api key from the gemini dashbord, the telegram bot token given by BotFather and a random string used by chainlit authentication. Like so:

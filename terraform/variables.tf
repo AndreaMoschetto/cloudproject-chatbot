@@ -9,3 +9,9 @@ variable "telegram_token" {
   type        = string
   sensitive   = true
 }
+
+variable "chainlit_auth_secret" {
+  description = "Secret for Chainlit session signing"
+  type        = string
+  sensitive   = true
+}

@@ -125,11 +125,11 @@ def run_ingestion_background(file_key: str, chat_id: str = None):
         )
         process.wait()  # no problem here, it's background task
         if process.returncode == 0:
-            msg = f"✅ Ingestion completed for **{filename}**!"
+            msg = f"✅ Ingestion completed for <b>{filename}</b>!"
             if chat_id:
                 send_telegram_notification(chat_id, msg)
         else:
-            msg = f"❌ Ingestion error for **{filename}**."
+            msg = f"❌ Ingestion error for <b>{filename}</b>."
             if chat_id:
                 send_telegram_notification(chat_id, msg)
 
@@ -145,7 +145,7 @@ def send_telegram_notification(chat_id, message):
         return
     try:
         url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-        requests.post(url, json={"chat_id": chat_id, "text": message, "parse_mode": "Markdown"})
+        requests.post(url, json={"chat_id": chat_id, "text": message, "parse_mode": "HTML"})
     except Exception as e:
         print(f"⚠️ Failed to send Telegram notification: {e}")
 

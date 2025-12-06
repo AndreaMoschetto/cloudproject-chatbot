@@ -8,7 +8,9 @@ import re
 TOKEN = os.environ.get('TELEGRAM_TOKEN')
 S3_BUCKET = os.environ.get('S3_BUCKET_NAME')
 ORCHESTRATOR_URL = os.environ.get('ORCHESTRATOR_URL', '')
-ALLOWED_IDS = os.environ.get('ALLOWED_IDS', '').split(',')
+raw_ids = os.environ.get('ALLOWED_IDS', '')
+ALLOWED_IDS = [x.strip() for x in raw_ids.split(',') if x.strip()]
+
 BASE_URL = f"https://api.telegram.org/bot{TOKEN}"
 
 
@@ -28,20 +30,20 @@ def lambda_handler(event, context):
 
         if 'message' in body:
             message = body['message']
-            chat_id = message['chat']['id']
+            chat_id = str(message['chat']['id'])
 
-            # --- SOFT SECURITY BLOCK ---------------------------
-            if ALLOWED_IDS and ALLOWED_IDS != [''] and chat_id not in ALLOWED_IDS:
+            # --- SOFT SECURITY BLOCK ---
+            if ALLOWED_IDS and chat_id not in ALLOWED_IDS:
                 print(f"⛔ Unauthorized access attempt from Chat ID: {chat_id}")
                 msg = (
-                    "⛔ **ACCESS DENIED**\n"
+                    "⛔ <b>ACCESS DENIED</b>\n"
                     "You are not authorized to use this bot.\n\n"
-                    f"Your Chat ID is: `{chat_id}`\n"
+                    f"Your Chat ID is: <code>{chat_id}</code>\n"
                     "Send this code to the administrator to request access."
                 )
                 send_message(chat_id, msg)
                 return {'statusCode': 200}
-            # ---------------------------------------------------
+            # ---------------------------
 
             if 'document' in message:
                 file_id = message['document']['file_id']
@@ -53,7 +55,9 @@ def lambda_handler(event, context):
                     return {'statusCode': 200}
 
                 file_name = sanitize_filename(raw_filename)
-                send_message(chat_id, f"⏳ Scarico: {file_name} ...")
+                
+                send_message(chat_id, f"⏳ Scarico: <code>{file_name}</code> ...")
+                
                 file_path = get_telegram_file_path(file_id)
                 download_url = f"https://api.telegram.org/file/bot{TOKEN}/{file_path}"
 
@@ -65,7 +69,7 @@ def lambda_handler(event, context):
                         file_name,
                         ExtraArgs={"Metadata": {"chat_id": str(chat_id)}}
                     )
-                send_message(chat_id, f"✅ File **{file_name}** loaded on S3!\nThe RAG system is processing it. I will notify you when it's done.")
+                send_message(chat_id, f"✅ File <b>{file_name}</b> loaded on S3!\nThe RAG system is processing it. I will notify you when it's done.")
 
             elif 'text' in message:
                 text = message['text'].strip()
@@ -73,28 +77,26 @@ def lambda_handler(event, context):
                 if text == "/start":
                     msg = (
                         "Hello! 👋 I'm the CloudNLP bot.\n\n"
-                        "📄 **Send a PDF** to upload it to the Knowledge Base.\n"
-                        "📂 **/list** - See uploaded files\n"
-                        "🗑️ **/delete <name>** - Delete a file"
+                        "📄 <b>Send a PDF</b> to upload it.\n"
+                        "📂 <b>/list</b> - See uploaded files\n"
+                        "🗑️ <b>/delete name</b> - Delete a file"
                     )
                     send_message(chat_id, msg)
 
                 elif text == "/list":
-                    # Call the Orchestrator to get the list of files
                     if not ORCHESTRATOR_URL:
                         send_message(chat_id, "❌ Configuration error: ORCHESTRATOR_URL missing.")
                         return {'statusCode': 200}
 
                     try:
-                        # Remove trailing slash from base URL
                         api_url = f"{ORCHESTRATOR_URL.rstrip('/')}/files"
                         req = urllib.request.Request(api_url)
                         with urllib.request.urlopen(req) as response:
                             data = json.loads(response.read())
                             files = data.get("files", [])
                             if files:
-                                file_list = "\n".join([f"- `{f}`" for f in files])
-                                send_message(chat_id, f"📂 **Files in the system:**\n{file_list}")
+                                file_list = "\n".join([f"- <code>{f}</code>" for f in files])
+                                send_message(chat_id, f"📂 <b>Files in the system:</b>\n{file_list}")
                             else:
                                 send_message(chat_id, "📭 No files found.")
                     except Exception as e:
@@ -102,10 +104,9 @@ def lambda_handler(event, context):
                         send_message(chat_id, f"❌ Error retrieving list: {e}")
 
                 elif text.startswith("/delete"):
-                    # Example command: /delete my_file.pdf
                     parts = text.split(maxsplit=1)
                     if len(parts) < 2:
-                        send_message(chat_id, "⚠️ Usage: `/delete filename.pdf`")
+                        send_message(chat_id, "⚠️ Usage: <code>/delete filename.pdf</code>")
                     else:
                         filename = parts[1].strip()
                         if not ORCHESTRATOR_URL:
@@ -114,13 +115,12 @@ def lambda_handler(event, context):
 
                         try:
                             api_url = f"{ORCHESTRATOR_URL.rstrip('/')}/files/{filename}"
-                            # Create a DELETE request
                             req = urllib.request.Request(api_url, method='DELETE')
                             urllib.request.urlopen(req)
-                            send_message(chat_id, f"🗑️ File **{filename}** deleted successfully.")
+                            send_message(chat_id, f"🗑️ File <b>{filename}</b> deleted successfully.")
                         except urllib.error.HTTPError as e:
                             if e.code == 404:
-                                send_message(chat_id, f"⚠️ File **{filename}** not found.")
+                                send_message(chat_id, f"⚠️ File <b>{filename}</b> not found.")
                             else:
                                 send_message(chat_id, f"❌ Deletion error: {e}")
                         except Exception as e:
@@ -150,7 +150,7 @@ def send_message(chat_id, text):
     payload = {
         'chat_id': chat_id,
         'text': text,
-        'parse_mode': 'Markdown'
+        'parse_mode': 'HTML'
     }
     req = urllib.request.Request(
         url,
